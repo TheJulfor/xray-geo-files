@@ -1,8 +1,8 @@
 name: Build Custom Geo Files
 on:
   schedule:
-    - cron: '0 0 * * *' # Автоматическое обновление каждую ночь
-  workflow_dispatch: # Кнопка для ручного запуска
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,40 +11,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
-      - name: Download Tool and Source Files
+      - name: Download Compilers and Clone Rules
         run: |
-          # Клонируем исходники утилиты
-          git clone https://github.com/hexband/geosite-extract.git
+          # Скачиваем официальные легковесные компиляторы v2fly (они точно есть в релизах!)
+          wget https://github.com/v2fly/geoip/releases/latest/download/geoip-linux-amd64
+          wget https://github.com/v2fly/geosite/releases/latest/download/geosite-linux-amd64
+          chmod +x geoip-linux-amd64 geosite-linux-amd64
           
-          # Скачиваем оригинальные тяжелые базы
-          wget -O source-geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
-          wget -O source-geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+          # Клонируем текстовые исходники правил от Loyalsoldier
+          git clone --depth 1 https://github.com/Loyalsoldier/geoip.git source-geoip
+          git clone --depth 1 https://github.com/Loyalsoldier/v2ray-rules-dat.git source-geosite
 
-      - name: Build Tool and Extract Custom Geo Files
+      - name: Filter and Compile Custom Geo Files
         run: |
-          # Заходим в папку с утилитой
-          cd geosite-extract
+          # 1. Готовим папки для сборки
+          mkdir -p geoip-dir geosite-dir
           
-          # Компилируем напрямую, минуя прокси, и называем бинарник "extractor"
-          export GOPROXY=direct
-          go build -o ../extractor ./cmd/geosite-extract
+          # 2. Копируем строго нужные текстовые списки IP
+          cp source-geoip/text/ru.txt geoip-dir/
+          cp source-geoip/text/private.txt geoip-dir/
           
-          # Возвращаемся в корень воркфлоу
-          cd ..
-          chmod +x extractor
+          # 3. Копируем строго нужные текстовые списки сайтов из дата-папки Loyalsoldier
+          cd source-geosite/data
+          cp category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy ../../geosite-dir/
+          cd ../../
           
-          # Вырезаем Geosite (используем наш бинарник extractor)
-          ./extractor -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
-          mv output.dat geosite.dat
-          
-          # Вырезаем Geoip
-          ./extractor -type geoip -shrink source-geoip.dat ru private
-          mv output.dat geoip.dat
+          # 4. Компилируем текстовые файлы в финальные .dat базы
+          ./geoip-linux-amd64 -input geoip-dir -output geoip.dat
+          ./geosite-linux-amd64 -input geosite-dir -output geosite.dat
 
       - name: Release and Upload
         uses: softprops/action-gh-release@v2
