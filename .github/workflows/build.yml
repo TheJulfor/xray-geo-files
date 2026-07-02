@@ -1,7 +1,7 @@
 name: Build Custom Geo Files
 on:
   schedule:
-    - cron: '0 0 * * *' # Будет обновляться автоматически каждую ночь
+    - cron: '0 0 * * *' # Автоматическое обновление каждую ночь
   workflow_dispatch: # Кнопка для ручного запуска
 
 jobs:
@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download Geo Extractor
         run: |
-          wget https://github.com/v2fly/geo-extractor/releases/latest/download/geo-extractor-linux-amd64.tar.gz
+          # Исправленный репозиторий v2ray-geo-extractor
+          wget https://github.com/v2fly/v2ray-geo-extractor/releases/latest/download/geo-extractor-linux-amd64.tar.gz
           tar -xvf geo-extractor-linux-amd64.tar.gz
 
       - name: Download Source Dat Files
@@ -24,7 +25,7 @@ jobs:
       - name: Extract Custom Geo Files
         run: |
           ./geo-extractor-linux-amd64 -type site -input source-geosite.dat -output geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
-          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private
+          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private telegram
 
       - name: Release and Upload
         uses: softprops/action-gh-release@v2
