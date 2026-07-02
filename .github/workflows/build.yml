@@ -11,24 +11,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
       - name: Download Tool and Source Files
         run: |
-          # Скачиваем готовый скомпилированный бинарник утилиты hexband
-          wget https://github.com/hexband/geosite-extract/releases/latest/download/geosite-extract-linux-amd64.tar.gz
-          tar -xvf geosite-extract-linux-amd64.tar.gz
-          chmod +x geosite-extract
+          # Клонируем исходники утилиты
+          git clone https://github.com/hexband/geosite-extract.git
           
           # Скачиваем оригинальные тяжелые базы
           wget -O source-geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -O source-geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
 
-      - name: Extract Custom Geo Files
+      - name: Build Tool and Extract Custom Geo Files
         run: |
-          # Вырезаем Geosite (утилита создаст файл output.dat)
+          # Заходим в папку с утилитой, где лежит go.mod
+          cd geosite-extract
+          
+          # Компилируем напрямую, минуя зависающий прокси proxy.golang.org
+          export GOPROXY=direct
+          go build -o ../geosite-extract ./cmd/geosite-extract
+          
+          # Возвращаемся в корневую директорию воркфлоу
+          cd ..
+          chmod +x geosite-extract
+          
+          # Вырезаем Geosite (создаст output.dat)
           ./geosite-extract -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
           mv output.dat geosite.dat
           
-          # Вырезаем Geoip (утилита снова создаст файл output.dat)
+          # Вырезаем Geoip (создаст output.dat)
           ./geosite-extract -type geoip -shrink source-geoip.dat ru private
           mv output.dat geoip.dat
 
