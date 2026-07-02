@@ -1,0 +1,41 @@
+name: Build Custom Geo Files
+on:
+  schedule:
+    - cron: '0 0 * * *' # Будет обновляться автоматически каждую ночь
+  workflow_dispatch: # Кнопка для ручного запуска
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Geo Extractor
+        run: |
+          wget https://github.com/v2fly/geo-extractor/releases/latest/download/geo-extractor-linux-amd64.tar.gz
+          tar -xvf geo-extractor-linux-amd64.tar.gz
+
+      - name: Download Source Dat Files
+        run: |
+          wget -O source-geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+          wget -O source-geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+
+      - name: Extract Custom Geo Files
+        run: |
+          # Вырезаем только нужные Geosite
+          ./geo-extractor-linux-amd64 -type site -input source-geosite.dat -output geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          
+          # Вырезаем только нужные Geoip
+          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private telegram
+
+      - name: Release and Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Custom Geo Files
+          files: |
+            geosite.dat
+            geoip.dat
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
