@@ -11,33 +11,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
       - name: Download Tool and Source Files
         run: |
-          # Клонируем утилиту
-          git clone https://github.com/hexband/geosite-extract.git
+          # Скачиваем готовый скомпилированный бинарник утилиты hexband
+          wget https://github.com/hexband/geosite-extract/releases/latest/download/geosite-extract-linux-amd64.tar.gz
+          tar -xvf geosite-extract-linux-amd64.tar.gz
+          chmod +x geosite-extract
           
           # Скачиваем оригинальные тяжелые базы
           wget -O source-geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -O source-geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
 
-      - name: Build Tool and Extract Custom Geo Files
+      - name: Extract Custom Geo Files
         run: |
-          cd geosite-extract
-          # Компилируем утилиту
-          go install ./cmd/geosite-extract
-          cd ..
-          
           # Вырезаем Geosite (утилита создаст файл output.dat)
-          geosite-extract -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          ./geosite-extract -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
           mv output.dat geosite.dat
           
           # Вырезаем Geoip (утилита снова создаст файл output.dat)
-          geosite-extract -type geoip -shrink source-geoip.dat ru private
+          ./geosite-extract -type geoip -shrink source-geoip.dat ru private
           mv output.dat geoip.dat
 
       - name: Release and Upload
