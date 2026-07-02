@@ -27,23 +27,23 @@ jobs:
 
       - name: Build Tool and Extract Custom Geo Files
         run: |
-          # Заходим в папку с утилитой, где лежит go.mod
+          # Заходим в папку с утилитой
           cd geosite-extract
           
-          # Компилируем напрямую, минуя зависающий прокси proxy.golang.org
+          # Компилируем напрямую, минуя прокси, и называем бинарник "extractor"
           export GOPROXY=direct
-          go build -o ../geosite-extract ./cmd/geosite-extract
+          go build -o ../extractor ./cmd/geosite-extract
           
-          # Возвращаемся в корневую директорию воркфлоу
+          # Возвращаемся в корень воркфлоу
           cd ..
-          chmod +x geosite-extract
+          chmod +x extractor
           
-          # Вырезаем Geosite (создаст output.dat)
-          ./geosite-extract -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          # Вырезаем Geosite (используем наш бинарник extractor)
+          ./extractor -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
           mv output.dat geosite.dat
           
-          # Вырезаем Geoip (создаст output.dat)
-          ./geosite-extract -type geoip -shrink source-geoip.dat ru private
+          # Вырезаем Geoip
+          ./extractor -type geoip -shrink source-geoip.dat ru private
           mv output.dat geoip.dat
 
       - name: Release and Upload
