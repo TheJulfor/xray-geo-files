@@ -23,11 +23,8 @@ jobs:
 
       - name: Extract Custom Geo Files
         run: |
-          # Вырезаем только нужные Geosite
           ./geo-extractor-linux-amd64 -type site -input source-geosite.dat -output geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
-          
-          # Вырезаем только нужные Geoip
-          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private telegram
+          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private
 
       - name: Release and Upload
         uses: softprops/action-gh-release@v2
