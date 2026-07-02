@@ -11,21 +11,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Download Geo Extractor
-        run: |
-          # Исправленный репозиторий v2ray-geo-extractor
-          wget https://github.com/v2fly/v2ray-geo-extractor/releases/latest/download/geo-extractor-linux-amd64.tar.gz
-          tar -xvf geo-extractor-linux-amd64.tar.gz
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
 
-      - name: Download Source Dat Files
+      - name: Download Tool and Source Files
         run: |
+          # Клонируем утилиту
+          git clone https://github.com/hexband/geosite-extract.git
+          
+          # Скачиваем оригинальные тяжелые базы
           wget -O source-geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           wget -O source-geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
 
-      - name: Extract Custom Geo Files
+      - name: Build Tool and Extract Custom Geo Files
         run: |
-          ./geo-extractor-linux-amd64 -type site -input source-geosite.dat -output geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
-          ./geo-extractor-linux-amd64 -type ip -input source-geoip.dat -output geoip.dat ru private telegram
+          cd geosite-extract
+          # Компилируем утилиту, чтобы бинарник geosite-extract был доступен глобально
+          go install ./cmd/geosite-extract
+          cd ..
+          
+          # Вырезаем и оптимизируем Geosite (флаг -shrink уберет лишний мусор)
+          geosite-extract -type geosite -shrink source-geosite.dat geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          
+          # Вырезаем и оптимизируем Geoip
+          geosite-extract -type geoip -shrink source-geoip.dat geoip.dat ru private
 
       - name: Release and Upload
         uses: softprops/action-gh-release@v2
