@@ -28,15 +28,17 @@ jobs:
       - name: Build Tool and Extract Custom Geo Files
         run: |
           cd geosite-extract
-          # Компилируем утилиту, чтобы бинарник geosite-extract был доступен глобально
+          # Компилируем утилиту
           go install ./cmd/geosite-extract
           cd ..
           
-          # Вырезаем и оптимизируем Geosite (флаг -shrink уберет лишний мусор)
-          geosite-extract -type geosite -shrink source-geosite.dat geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          # Вырезаем Geosite (утилита создаст файл output.dat)
+          geosite-extract -type geosite -shrink source-geosite.dat category-ru yandex mailru youtube discord telegram instagram tiktok category-ads-all win-spy
+          mv output.dat geosite.dat
           
-          # Вырезаем и оптимизируем Geoip
-          geosite-extract -type geoip -shrink source-geoip.dat geoip.dat ru private
+          # Вырезаем Geoip (утилита снова создаст файл output.dat)
+          geosite-extract -type geoip -shrink source-geoip.dat ru private
+          mv output.dat geoip.dat
 
       - name: Release and Upload
         uses: softprops/action-gh-release@v2
